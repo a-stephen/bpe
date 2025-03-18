@@ -1,6 +1,10 @@
 #include "stdio.h"
 #include "string.h"
 
+#define NOB_IMPLEMENTATION
+#define NOB_STRIP_PREFIX
+#include "nob.h"
+
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
@@ -11,9 +15,21 @@ typedef struct {
 typedef struct {
   Pair key;
   size_t value;
-} KV;
+} Freq;
 
-KV *freq = NULL;
+typedef struct {
+  Freq *items;
+  size_t count;
+  size_t capacity;
+} Freqs;
+
+Freq *freq = NULL;
+
+int compare_freqs(const void *a, const void *b) {
+  const Freq *af = a;
+  const Freq *bf = b;
+  return (int)bf->value - (int)af->value;
+}
 
 int main()
 {
@@ -30,8 +46,16 @@ int main()
     // hmput(freq, key, count + 1)
   }
 
+  Freqs sorted_freqs = {0};
+
   for (ptrdiff_t i = 0; i < hmlen(freq); ++i) {
-    printf("%c%c => %zu\n", freq[i].key.pair[0], freq[i].key.pair[1], freq[i].value);
+    // printf("%c%c => %zu\n", freq[i].key.pair[0], freq[i].key.pair[1], freq[i].value);
+    da_append(&sorted_freqs, freq[i]);
+  }
+  qsort(sorted_freqs.items, sorted_freqs.count, sizeof(*sorted_freqs.items), compare_freqs);
+  for (size_t i = 0; i < 10; ++i) {
+    Freq *freq = &sorted_freqs.items[i];
+    printf("%c%c => %zu\n", freq->key.pair[0], freq->key.pair[1], freq->value);
   }
   return 0;
 }
