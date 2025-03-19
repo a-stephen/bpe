@@ -36,7 +36,7 @@ typedef struct {
   size_t capacity;
 } Freqs;
 
-Freq *freq = NULL;
+// Freq *freq = NULL;
 
 int compare_freqs(const void *a, const void *b) {
   const Freq *af = a;
@@ -57,6 +57,14 @@ void render_tokens(Pairs pairs, Tokens tokens) {
   }
   printf("\n");
 }
+
+#define swap(Type, x, y) \
+  do { \
+    Type t = (x); \
+    (x) = (y); \
+    (y) = t; \
+  } while(0)
+
 
 int main()
 {
@@ -84,55 +92,47 @@ int main()
     da_append(&tokens, text[i]);
   } 
 
-  for (size_t i = 0; i < tokens.count - 1; ++i) {
-    Pair pair = {
-      .l = tokens.items[i],
-      .r = tokens.items[i+1]
-    };
-    ptrdiff_t d = hmgeti(freq, pair);
-    if (d < 0) hmput(freq, pair, 1);
-    else freq[d].value += 1;
-    // hmput(freq, key, count + 1)
-  }
+  for (int a = 0; a < 10; ++a) {
+	  render_tokens(pairs, tokens);
+	  for (size_t i = 0; i < tokens.count - 1; ++i) {
+	    Pair pair = {
+	      .l = tokens.items[i],
+	      .r = tokens.items[i+1]
+	    };
+	    ptrdiff_t d = hmgeti(freq, pair);
+	    if (d < 0) hmput(freq, pair, 1);
+	    else freq[d].value += 1;
+	    // hmput(freq, key, count + 1)
+	  }
 
-  ptrdiff_t max_index = 0;
-  for (ptrdiff_t i = 1; i < hmlen(freq); ++i) {
-      if (freq[i].value > freq[max_index].value) {
-        max_index = i;
-      }
+	  ptrdiff_t max_index = 0;
+	  for (ptrdiff_t i = 1; i < hmlen(freq); ++i) {
+	      if (freq[i].value > freq[max_index].value) {
+		max_index = i;
+	      }
+	  }
+          if (freq[max_index].value <= 1) break; // compression done!!
+	  da_append(&pairs, freq[max_index].key);
+	  tokens_out.count = 0;
+	  for (size_t i = 0; i < tokens.count; ) {
+	    if (i + 1 >= tokens.count) {
+	      da_append(&tokens_out, tokens.items[i]);
+	      i += 1;
+	    } else {
+	      Pair pair = {
+		.l = tokens.items[i],
+		.r = tokens.items[i + 1]
+	      };
+	      if (memcmp(&pair, &freq[max_index].key, sizeof(pair)) == 0) {
+		da_append(&tokens_out, pairs.count -1);
+		i += 2;
+	      } else {
+		da_append(&tokens_out, tokens.items[i]);
+		i += 1;
+	      }
+	    }
+	  }
+	  swap(Tokens, tokens, tokens_out);
   }
-  
-  da_append(&pairs, freq[max_index].key);
-  
-  for (size_t i = 0; i < tokens.count; ) {
-    if (i + 1 >= tokens.count) {
-      da_append(&tokens_out, tokens.items[i]);
-      i += 1;
-    } else {
-      Pair pair = {
-        .l = tokens.items[i],
-        .r = tokens.items[i + 1]
-      };
-      if (memcmp(&pair, &freq[max_index].key, sizeof(pair)) == 0) {
-        da_append(&tokens_out, pairs.count -1);
-	i += 2;
-      } else {
-        da_append(&tokens_out, tokens.items[i]);
-	i += 1;
-      }
-    }
-  }
-  render_tokens(pairs, tokens_out);
-  /*Freqs sorted_freqs = {0};*/
-  /**/
-  /*for (ptrdiff_t i = 0; i < hmlen(freq); ++i) {*/
-  /*  // printf("%c%c => %zu\n", freq[i].key.pair[0], freq[i].key.pair[1], freq[i].value);*/
-  /*  da_append(&sorted_freqs, freq[i]);*/
-  /*}*/
-  /*qsort(sorted_freqs.items, sorted_freqs.count, sizeof(*sorted_freqs.items), compare_freqs);*/
-  /*for (size_t i = 0; i < 10; ++i) {*/
-  /*  Freq *freq = &sorted_freqs.items[i];*/
-  /*  printf("(%u, %u) => %zu\n", freq->key.l, freq->key.r, freq->value);*/
-  /*}*/
   return 0;
 }
