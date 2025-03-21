@@ -66,6 +66,35 @@ void render_tokens(Pairs pairs, Tokens tokens) {
   } while(0)
 
 
+bool dump_pairs(const char *file_path, Pairs pairs) {
+  return write_entire_file(file_path, pairs.items, pairs.count*sizeof(*pairs.items));
+}
+
+bool load_pairs(const char *file_path, Pairs *pairs, String_Builder *sb) {
+  if (!read_entire_file(file_path, sb)) return false;
+  if (sb.count%sizeof(*pair.items) != 0) {
+    fprintf(stderr, "ERROR: size of %s (%zu) must be divisibile by %zu\n", file_path, sb.count, sizeof(%pairs.items));
+    return false
+  }
+  Pair *items = (void*)sb.items;
+  size_t items_count = sb.items/sizeof(*pairs.items);
+  for (size_t i = 0; i < items_count; ++i) {
+    da_append(pairs, items[i]);
+  }
+  return true;
+}
+
+void generate_dots(Pairs pairs) {
+  printf("digraph Pairs {\n"); 
+  for (uint32_t token = 0; token < pairs.count; ++token) {
+    if (token != pairs.items[token].l) {
+      printf("  %u -> %u\n", token, pairs.items[token].l);
+      printf("  %u -> %u\n", token, pairs.items[token].r);
+    }
+  }
+  printf("}\n");
+}
+
 int main()
 {
   // Taken from the original wikipedia article.
@@ -92,8 +121,10 @@ int main()
     da_append(&tokens, text[i]);
   } 
 
-  for (int a = 0; a < 10; ++a) {
-	  render_tokens(pairs, tokens);
+  for (;;) {
+	  // printf("%zu\n", tokens.count);
+	  // render_tokens(pairs, tokens);
+	  hmfree(freq);
 	  for (size_t i = 0; i < tokens.count - 1; ++i) {
 	    Pair pair = {
 	      .l = tokens.items[i],
@@ -134,5 +165,8 @@ int main()
 	  }
 	  swap(Tokens, tokens, tokens_out);
   }
+  // printf("Generated %zu tokens", pairs.count);
+  generate_dots(pairs);
+  if (!dump_pairs("pair.bin", pairs)) return 1;
   return 0;
 }
